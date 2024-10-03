@@ -10,7 +10,7 @@ import (
 	"github.com/sqlc-dev/sqlc/internal/plugin"
 )
 
-func sqliteType(req *plugin.GenerateRequest, options *opts.Options, col *plugin.Column) string {
+func sqliteType(_ *plugin.GenerateRequest, options *opts.Options, col *plugin.Column) string {
 	dt := strings.ToLower(sdk.DataType(col.Type))
 	notNull := col.NotNull || col.IsArray
 	emitPointersForNull := options.EmitPointersForNullTypes
