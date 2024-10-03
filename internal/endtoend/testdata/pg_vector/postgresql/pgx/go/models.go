@@ -9,6 +9,8 @@ import (
 )
 
 type Item struct {
-	ID        int64
-	Embedding pgvector.Vector
+	ID              int64
+	Embedding       pgvector.Vector
+	HalfEmbedding   pgvector.HalfVector
+	SparseEmbedding pgvector.SparseVector
 }

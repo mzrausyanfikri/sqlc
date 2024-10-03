@@ -538,6 +538,24 @@ func postgresType(req *plugin.GenerateRequest, options *opts.Options, col *plugi
 			return "pgtype.Polygon"
 		}
 
+	case "halfvec":
+		if driver == opts.SQLDriverPGXV5 {
+			if emitPointersForNull {
+				return "*pgvector.HalfVector"
+			} else {
+				return "pgvector.HalfVector"
+			}
+		}
+
+	case "sparsevec":
+		if driver == opts.SQLDriverPGXV5 {
+			if emitPointersForNull {
+				return "*pgvector.SparseVector"
+			} else {
+				return "pgvector.SparseVector"
+			}
+		}
+
 	case "vector":
 		if driver == opts.SQLDriverPGXV5 {
 			if emitPointersForNull {

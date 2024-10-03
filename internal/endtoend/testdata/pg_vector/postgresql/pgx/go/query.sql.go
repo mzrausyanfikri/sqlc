@@ -12,16 +12,23 @@ import (
 )
 
 const insertVector = `-- name: InsertVector :exec
-INSERT INTO items (embedding) VALUES ($1)
+INSERT INTO items (embedding, half_embedding, sparse_embedding)
+VALUES ($1, $2, $3)
 `
 
-func (q *Queries) InsertVector(ctx context.Context, embedding pgvector.Vector) error {
-	_, err := q.db.Exec(ctx, insertVector, embedding)
+type InsertVectorParams struct {
+	Embedding       pgvector.Vector
+	HalfEmbedding   pgvector.HalfVector
+	SparseEmbedding pgvector.SparseVector
+}
+
+func (q *Queries) InsertVector(ctx context.Context, arg InsertVectorParams) error {
+	_, err := q.db.Exec(ctx, insertVector, arg.Embedding, arg.HalfEmbedding, arg.SparseEmbedding)
 	return err
 }
 
 const nearestNeighbor = `-- name: NearestNeighbor :many
-SELECT id, embedding
+SELECT id, embedding, half_embedding, sparse_embedding
 FROM items
 ORDER BY embedding <-> $1
 LIMIT 5
@@ -36,7 +43,76 @@ func (q *Queries) NearestNeighbor(ctx context.Context, embedding pgvector.Vector
 	var items []Item
 	for rows.Next() {
 		var i Item
-		if err := rows.Scan(&i.ID, &i.Embedding); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Embedding,
+			&i.HalfEmbedding,
+			&i.SparseEmbedding,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const nearestNeighborHalfvec = `-- name: NearestNeighborHalfvec :many
+SELECT id, embedding, half_embedding, sparse_embedding
+FROM items
+ORDER BY half_embedding <-> $1
+LIMIT 5
+`
+
+func (q *Queries) NearestNeighborHalfvec(ctx context.Context, halfEmbedding pgvector.HalfVector) ([]Item, error) {
+	rows, err := q.db.Query(ctx, nearestNeighborHalfvec, halfEmbedding)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.Embedding,
+			&i.HalfEmbedding,
+			&i.SparseEmbedding,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const nearestNeighborSparsevec = `-- name: NearestNeighborSparsevec :many
+SELECT id, embedding, half_embedding, sparse_embedding
+FROM items
+ORDER BY sparse_embedding <-> $1
+LIMIT 5
+`
+
+func (q *Queries) NearestNeighborSparsevec(ctx context.Context, sparseEmbedding pgvector.SparseVector) ([]Item, error) {
+	rows, err := q.db.Query(ctx, nearestNeighborSparsevec, sparseEmbedding)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.Embedding,
+			&i.HalfEmbedding,
+			&i.SparseEmbedding,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
